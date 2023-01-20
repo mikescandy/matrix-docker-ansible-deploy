@@ -47,6 +47,8 @@ When you're done with all the configuration you'd like to do, continue with [Ins
 
   - [Configuring Conduit](configuring-playbook-conduit.md), if you've switched to the [Conduit](https://conduit.rs) homeserver implementation (optional)
 
+  - [Configuring Dendrite](configuring-playbook-dendrite.md), if you've switched to the [Dendrite](https://matrix-org.github.io/dendrite) homeserver implementation (optional)
+
 - [Configuring Element](configuring-playbook-client-element.md) (optional)
 
 - [Storing Matrix media files on Amazon S3](configuring-playbook-s3.md) (optional)
@@ -104,6 +106,8 @@ When you're done with all the configuration you'd like to do, continue with [Ins
 
 - [Setting up Mautrix Telegram bridging](configuring-playbook-bridge-mautrix-telegram.md) (optional)
 
+- [Setting up Mautrix Slack bridging](configuring-playbook-bridge-mautrix-slack.md) (optional)
+
 - [Setting up Mautrix Whatsapp bridging](configuring-playbook-bridge-mautrix-whatsapp.md) (optional)
 
 - [Setting up Mautrix Facebook bridging](configuring-playbook-bridge-mautrix-facebook.md) (optional)
@@ -158,6 +162,8 @@ When you're done with all the configuration you'd like to do, continue with [Ins
 
 
 ### Bots
+
+- [Setting up matrix-bot-chatgpt](configuring-playbook-bot-chatgpt.md) - a bot through which you can talk to the [ChatGPT](https://openai.com/blog/chatgpt/) model(optional)
 
 - [Setting up matrix-reminder-bot](configuring-playbook-bot-matrix-reminder-bot.md) - a bot to remind you about stuff (optional)
 

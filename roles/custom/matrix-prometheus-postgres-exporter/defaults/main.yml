@@ -7,7 +7,8 @@ matrix_prometheus_postgres_exporter_enabled: false
 matrix_prometheus_postgres_exporter_version: v0.11.1
 matrix_prometheus_postgres_exporter_port: 9187
 
-matrix_prometheus_postgres_exporter_docker_image: "quay.io/prometheuscommunity/postgres-exporter:{{ matrix_prometheus_postgres_exporter_version }}"
+matrix_prometheus_postgres_exporter_docker_image: "{{ matrix_prometheus_postgres_exporter_docker_image_name_prefix }}prometheuscommunity/postgres-exporter:{{ matrix_prometheus_postgres_exporter_version }}"
+matrix_prometheus_postgres_exporter_docker_image_name_prefix: "quay.io/"
 matrix_prometheus_postgres_exporter_docker_image_force_pull: "{{ matrix_prometheus_postgres_exporter_docker_image.endswith(':latest') }}"
 
 # A list of extra arguments to pass to the container
@@ -24,7 +25,7 @@ matrix_prometheus_postgres_exporter_systemd_wanted_services_list: []
 # details for connecting to the database
 matrix_prometheus_postgres_exporter_database_username: 'matrix_prometheus_postgres_exporter'
 matrix_prometheus_postgres_exporter_database_password: 'some-password'
-matrix_prometheus_postgres_exporter_database_hostname: 'matrix-postgres'
+matrix_prometheus_postgres_exporter_database_hostname: ''
 matrix_prometheus_postgres_exporter_database_port: 5432
 matrix_prometheus_postgres_exporter_database_name: 'matrix_prometheus_postgres_exporter'
 
