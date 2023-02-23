@@ -5,7 +5,7 @@
 
 matrix_prometheus_enabled: false
 
-matrix_prometheus_version: v2.41.0
+matrix_prometheus_version: v2.42.0
 matrix_prometheus_docker_image: "{{ matrix_container_global_registry_prefix }}prom/prometheus:{{ matrix_prometheus_version }}"
 matrix_prometheus_docker_image_force_pull: "{{ matrix_prometheus_docker_image.endswith(':latest') }}"
 
@@ -21,6 +21,14 @@ matrix_prometheus_systemd_required_services_list: ['docker.service']
 
 # List of systemd services that matrix-prometheus.service wants
 matrix_prometheus_systemd_wanted_services_list: []
+
+# The base container network. It will be auto-created by this role if it doesn't exist already.
+matrix_prometheus_container_network: ''
+
+# A list of additional container networks that the container would be connected to.
+# The role does not create these networks, so make sure they already exist.
+# Use this to expose this container to another reverse proxy, which runs in a different container network.
+matrix_prometheus_container_additional_networks: []
 
 # Controls whether the matrix-prometheus container exposes its HTTP port (tcp/9090 in the container).
 #

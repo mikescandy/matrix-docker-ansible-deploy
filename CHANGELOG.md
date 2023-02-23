@@ -1,3 +1,238 @@
+# 2023-02-17
+
+## Synapse templates customization support
+
+The playbook can now help you customize Synapse's templates.
+
+Additional details are available in the [Customizing templates](docs/configuring-playbook-synapse.md#customizing-templates) section of our Synapse documentation.
+
+## The matrix-redis role lives independently now
+
+**TLDR**: the `matrix-redis` role is now included from another repository. Some variables have been renamed. All functionality remains intact.
+
+The `matrix-redis` role (which configures [Redis](https://redis.io/)) has been extracted from the playbook and now lives in its [own repository](https://gitlab.com/etke.cc/roles/redis). This makes it possible to easily use it in other Ansible playbooks.
+
+You need to **update you roles** (`just roles` or `make roles`) regardless of whether you're enabling Ntfy or not. If you're making use of Ntfy via this playbook, you will need to update variable references in your `vars.yml` file (`matrix_redis_` -> `redis_`).
+
+## The matrix-ntfy role lives independently now
+
+**TLDR**: the `matrix-ntfy` role is now included from another repository. Some variables have been renamed. All functionality remains intact.
+
+The `matrix-ntfy` role (which configures [Ntfy](https://ntfy.sh/)) has been extracted from the playbook and now lives in its [own repository](https://gitlab.com/etke.cc/roles/ntfy). This makes it possible to easily use it in other Ansible playbooks.
+
+You need to **update you roles** (`just roles` or `make roles`) regardless of whether you're enabling Ntfy or not. If you're making use of Ntfy via this playbook, you will need to update variable references in your `vars.yml` file (`matrix_ntfy_` -> `ntfy_`).
+
+
+# 2023-02-15
+
+## The matrix-grafana role lives independently now
+
+**TLDR**: the `matrix-grafana` role is now included from another repository. Some variables have been renamed. All functionality remains intact.
+
+The `matrix-grafana` role (which configures [Grafana](docs/configuring-playbook-prometheus-grafana.md)) has been extracted from the playbook and now lives in its [own repository](https://gitlab.com/etke.cc/roles/grafana). This makes it possible to easily use it in other Ansible playbooks.
+
+You need to **update you roles** (`just roles` or `make roles`) regardless of whether you're enabling Grafana or not. If you're making use of Grafana via this playbook, you will need to update variable references in your `vars.yml` file (`matrix_grafana_` -> `grafana_`).
+
+
+# 2023-02-13
+
+## The matrix-backup-borg role lives independently now
+
+**TLDR**: the `matrix-backup-borg` role is now included from another repository. Some variables have been renamed. All functionality remains intact.
+
+Thanks to [moan0s](https://github.com/moan0s), the `matrix-backup-borg` role (which configures [Borg backups](docs/configuring-playbook-backup-borg.md)) has been extracted from the playbook and now lives in its [own repository](https://gitlab.com/etke.cc/roles/backup_borg). This makes it possible to easily use it in other Ansible playbooks and will become part of [nextcloud-docker-ansible-deploy](https://github.com/spantaleev/nextcloud-docker-ansible-deploy) soon.
+
+You need to **update you roles** (`just roles` or `make roles`) regardless of whether you're enabling Borg backup functionality or not. If you're making use of Borg backups via this playbook, you will need to update variable references in your `vars.yml` file (`matrix_backup_borg_` -> `backup_borg_`).
+
+
+# 2023-02-12
+
+## (Backward Compatibility) Reverse-proxy configuration changes and initial Traefik support
+
+**TLDR**:
+
+- there's a new `matrix_playbook_reverse_proxy_type` variable (see [roles/custom/matrix-base/defaults/main.yml](roles/custom/matrix-base/defaults/main.yml)), which lets you tell the playbook what reverse-proxy setup you'd like to have. This makes it easier for people who want to do reverse-proxying in other ways.
+- the default reverse-proxy (`matrix_playbook_reverse_proxy_type`) is still `playbook-managed-nginx` (via `matrix-nginx-proxy`), for now. **Existing `matrix-nginx-proxy` users should not observe any changes** and can stay on this for now.
+- **Users who use their [own other webserver](docs/configuring-playbook-own-webserver.md) (e.g. Apache, etc.) need to change** `matrix_playbook_reverse_proxy_type` to something like `other-on-same-host`, `other-on-another-host` or `other-nginx-non-container`
+- we now have **optional [Traefik](https://traefik.io/) support**, so you could easily host Matrix and other Traefik-native services in containers on the same server. Traefik support is still experimental (albeit, good enough) and will improve over time. It does work, but certain esoteric features may not be there yet.
+- **Traefik will become the default reverse-proxy in the near future**. `matrix-nginx-proxy` will either remain as an option, or be completely removed to simplify the playbook
+
+### Motivation for redoing our reverse-proxy setup
+
+The playbook has supported various reverse-proxy setups for a long time.
+We have various configuration variables (`matrix_nginx_proxy_enabled`, various `_host_bind_port` variables, etc.) which allow the playbook to adapt to these different setups. The whole situation was messy though - hard to figure out and with lots of variables to toggle to make things work as you'd expect - huge **operational complexity**.
+
+We love containers, proven by the fact that **everything** that this playbook manages runs in a container. Yet, we weren't allowing people to easily host other web-exposed containers alongside Matrix services on the same server. We were using `matrix-nginx-proxy` (our integrated [nginx](https://nginx.org/) server), which was handling web-exposure and SSL termination for our own services, but we **weren't helping you with all your other containers**.
+
+People who were **using `matrix-nginx-proxy`** were on the happy path on which everything worked well by default (Matrix-wise), **but** could not easily run other web-exposed services on their Matrix server because `matrix-nginx-proxy` was occupying ports `80` and `443`. Other services which wanted to get web exposure either had to be plugged into `matrix-nginx-proxy` (somewhat difficult) or people had to forgo using `matrix-nginx-proxy` in favor of something else.
+
+Of those that decided to forgo `matrix-nginx-proxy`, many were **using nginx** on the same server without a container. This was likely some ancient nginx version, depending on your choice of distro. The Matrix playbook was trying to be helpful and even with `matrix_nginx_proxy_enabled: false` was still generating nginx configuration in `/matrix/nginx-proxy/conf.d`. Those configuration files were adapted for inclusion into an nginx server running locally. Disabling the `matrix-nginx-proxy` role like this, yet still having it produce files is a bit disgusting, but it's what we've had since the early beginnings of this playbook.
+
+Others still, wanted to run Matrix locally (no SSL certificates), regardless of which web server technology this relied on, and then **reverse-proxy from another machine on the network** which was doing SSL termination. These people were:
+
+- *either* relying on `matrix_nginx_proxy_enabled: false` as well, combined with exposing services manually (setting `_bind_port` variables)
+- *or* better yet, they were keeping `matrix-nginx-proxy` enabled, but in `http`-only mode (no SSL certificate retrieval).
+
+Despite this operational complexity, things worked and were reasonably flexible to adapt to all these situations.
+
+When using `matrix-nginx-proxy` as is, we still had another problem - one of **internal playbook complexity**. Too many services need to be web-exposed (port 80/443, SSL certificates). Because of this, they all had to integrate with the `matrix-nginx-proxy` role. Tens of different roles explicitly integrating with `matrix-nginx-proxy` is not what we call clean. The `matrix-nginx-proxy` role contains variables for many of these roles (yikes). Other roles were more decoupled from it and were injecting configuration into `matrix-nginx-proxy` at runtime - see all the `inject_into_nginx_proxy.yml` task files in this playbook (more decoupled, but still.. yikes).
+
+The next problem is one of **efficiency, interoperability and cost-saving**. We're working on other playbooks:
+
+- [vaultwarden-docker-ansible-deploy](https://github.com/spantaleev/vaultwarden-docker-ansible-deploy) for hosting the [Vaultwarden](https://github.com/dani-garcia/vaultwarden) server - an alternative implementation of the [Bitwarden](https://bitwarden.com/) password manager
+- [gitea-docker-ansible-deploy](https://github.com/spantaleev/gitea-docker-ansible-deploy) - for hosting the [Gitea](https://gitea.io/) git source code hosting service
+- [nextcloud-docker-ansible-deploy](https://github.com/spantaleev/nextcloud-docker-ansible-deploy) - for hosting the [Nextcloud](https://nextcloud.com/) groupware platform
+
+We'd love for users to be able to **seamlessly use all these playbooks (and others, even) against a single server**. We don't want `matrix-nginx-proxy` to have a monopoly on port `80`/`443` and make it hard for other services to join in on the party. Such a thing forces people into running multiple servers (one for each service), which does provide nice security benefits, but is costly and ineffiecient. We'd like to make self-hosting these services cheap and easy.
+
+These other playbooks have been using [Traefik](https://traefik.io/) as their default reverse-proxy for a long time. They can all coexist nicely together (as an example, see the [Interoperability](https://github.com/spantaleev/nextcloud-docker-ansible-deploy/blob/master/docs/configuring-playbook-interoperability.md) documentation for the [Nextcloud playbook](https://github.com/spantaleev/nextcloud-docker-ansible-deploy)). Now that this playbook is gaining Traefik support, it will be able to interoperate with them. If you're going this way, make sure to have the Matrix playbook install Traefik and have the others use `*_reverse_proxy_type: other-traefik-container`.
+
+Finally, at [etke.cc - a managed Matrix server hosting service](https://etke.cc) (built on top of this playbook, and coincidentally [turning 2 years old today](https://etke.cc/news/upsyw4ykbtgmwhz8k7ukldx0zbbfq-fh0iqi3llixi0/) 🎉), we're allowing people to host some additional services besides Matrix components. Exposing these services to the web requires ugly hacks and configuration files being dropped into `/matrix/nginx-proxy/conf.d`. We believe that everything should run in independent containers and be exposed to the web via a Traefik server, without a huge Ansible role like `matrix-nginx-proxy` that everything else needs to integrate with.
+
+### How do these changes fix all these problems?
+
+The new `matrix_playbook_reverse_proxy_type` lets you easily specify your preferred reverse-proxy type, including `other-on-same-host`, `other-on-another-host` and `none`, so people who'd like to reverse-proxy with their own web server have more options now.
+
+Using Traefik greatly simplifies things, so going forward we'll have a simpler and easier to maintain playbook, which is also interoperable with other services.
+
+Traefik is a web server, which has been specifically **designed for reverse-proxying to services running in containers**. It's ideal for usage in an Ansible playbook which runs everything in containers.
+
+**Traefik obtains SSL certificates automatically**, so there's no need for plugging additional tools like [Certbot](https://certbot.eff.org/) into your web server (like we were doing in the `matrix-nginx-proxy` role). No more certificate renewal timers, web server reloading timers, etc. It's just simpler.
+
+Traefik is a **modern web server**. [HTTP/3](https://doc.traefik.io/traefik/routing/entrypoints/#http3) is supported already (experimentally) and will move to stable soon, in the upcoming Traefik v3 release.
+
+Traefik does not lock important functionality we'd like to use into [plus packages like nginx does](https://www.nginx.com/products/nginx/), leading us to resolve to configuration workarounds. The default Traefik package is good enough as it is.
+
+### Where we're at right now?
+
+`matrix_playbook_reverse_proxy_type` still defaults to a value of `playbook-managed-nginx`.
+
+Unless we have some regression, **existing `matrix-nginx-proxy` users should be able to update their Matrix server and not observe any changes**. Their setup should still remain on nginx and everything should still work as expected.
+
+**Users using [their own webservers](docs/configuring-playbook-own-webserver.md) will need to change `matrix_playbook_reverse_proxy_type`** to something like `other-on-same-host`, `other-on-another-host` or `other-nginx-non-container`. Previously, they could toggle `matrix_nginx_proxy_enabled` to `false`, and that made the playbook automatically expose services locally. Currently, we only do this if you change the reverse-proxy type to `other-on-same-host`, `other-on-another-host` or `other-nginx-non-container`.
+
+#### How do I explicitly switch to Traefik right now?
+
+**Users who wish to migrate to Traefik** today, can do so by **adding** this to their configuration:
+
+```yaml
+matrix_playbook_reverse_proxy_type: playbook-managed-traefik
+
+devture_traefik_config_certificatesResolvers_acme_email: YOUR_EMAIL_ADDRESS
+```
+
+You may still need to keep certain old `matrix_nginx_proxy_*` variables (like `matrix_nginx_proxy_base_domain_serving_enabled`), even when using Traefik. For now, we recommend keeping all `matrix_nginx_proxy_*` variables just in case. In the future, reliance on `matrix-nginx-proxy` will be removed.
+
+Switching to Traefik will obtain new SSL certificates from Let's Encrypt (stored in `/devture-traefik/ssl/acme.json`). **The switch is reversible**. You can always go back to `playbook-managed-nginx` if Traefik is causing you trouble.
+
+**Note**: toggling `matrix_playbook_reverse_proxy_type` between Traefik and nginx will uninstall the Traefik role and all of its data (under `/devture-traefik`), so you may run into a Let's Encrypt rate limit if you do it often.
+
+Treafik directly reverse-proxies to **some** services right now, but for most other services it goes through `matrix-nginx-proxy` (e.g. Traefik -> `matrix-nginx-proxy` -> [Ntfy](docs/configuring-playbook-ntfy.md)). So, even if you opt into Traefik, you'll still see `matrix-nginx-proxy` being installed in local-only mode. This will improve with time.
+
+Some services (like [Coturn](docs/configuring-playbook-turn.md) and [Postmoogle](docs/configuring-playbook-bot-postmoogle.md)) cannot be reverse-proxied to directly from Traefik, so they require direct access to SSL certificate files extracted out of Traefik. The playbook does this automatically thanks to a new [com.devture.ansible.role.traefik_certs_dumper](https://github.com/devture/com.devture.ansible.role.traefik_certs_dumper) role utilizing the [traefik-certs-dumper](https://github.com/ldez/traefik-certs-dumper) tool.
+
+Our Traefik setup mostly works, but certain esoteric features may not work. If you have a default setup, we expect you to have a good experience.
+
+
+### Where we're going in the near future?
+
+The `matrix-nginx-proxy` role is quite messy. It manages both nginx and Certbot and its certificate renewal scripts and timers. It generates configuration even when the role is disabled (weird). Although it doesn't directly reach into variables from other roles, it has explicit awareness of various other services that it reverse-proxies to (`roles/custom/matrix-nginx-proxy/templates/nginx/conf.d/matrix-ntfy.conf.j2`, etc.). We'd like to clean this up. The only way is probably to just get rid of the whole thing at some point.
+
+For now, `matrix-nginx-proxy` will stay around.
+
+As mentioned above, Traefik still reverse-proxies to some (most) services by going through a local-only `matrix-nginx-proxy` server. This has allowed us to add Traefik support to the playbook early on (without having to rework all services), but is not the final goal. We'll **work on making each service support Traefik natively**, so that traffic will not need to go through `matrix-nginx-proxy` anymore. In the end, choosing Traefik should only give you a pure Traefik installation with no `matrix-nginx-proxy` in sight.
+
+As Traefik support becomes complete and proves to be stable for a while, especially as a playbook default, we will **most likely remove `matrix-nginx-proxy` completely**. It will likely be some months before this happens though. Keeping support for both Traefik and nginx in the playbook will be a burden, especially with most of us running Traefik in the future. The Traefik role should do everything nginx does in a better and cleaner way. Users who use their own `nginx` server on the Matrix server will be inconvenienced, as nothing will generate ready-to-include nginx configuration for them. Still, we hope it won't be too hard to migrate their setup to another way of doing things, like:
+
+- not using nginx anymore. A common reason for using nginx until now was that you were running other containers and you need your own nginx to reverse-proxy to all of them. Just switch them to Traefik as well.
+- running Traefik in local-only mode (`devture_traefik_config_entrypoint_web_secure_enabled: false`) and using some nginx configuration which reverse-proxies to Traefik (we should introduce examples for this in `examples/nginx`).
+
+### How do I help?
+
+You can help by:
+
+- **explicitly switching your server to Traefik** right now (see example configuration in [How do I explicitly switch to Traefik right now?](#how-do-i-explicitly-switch-to-traefik-right-now) above), testing, reporting troubles
+
+- **adding native Traefik support to a role** (requires adding Traefik labels, etc.) - for inspiration, see these roles ([prometheus_node_exporter](https://gitlab.com/etke.cc/roles/prometheus_node_exporter), [prometheus_postgres_exporter](https://gitlab.com/etke.cc/roles/prometheus_postgres_exporter)) and how they're hooked into the playbook via [group_vars/matrix_servers](group_vars/matrix_servers).
+
+- **adding reverse-proxying examples for nginx users** in `examples/nginx`. People who insist on using their own `nginx` server on the same Matrix host, can run Traefik in local-only mode (`devture_traefik_config_entrypoint_web_secure_enabled: false`) and reverse-proxy to the Traefik server
+
+
+# 2023-02-10
+
+## Matrix Authentication Support for Jitsi
+
+Thanks to [Jakob S.](https://github.com/jakicoll) ([zakk gGmbH](https://github.com/zakk-it)), Jitsi can now use Matrix for authentication (via [Matrix User Verification Service](https://github.com/matrix-org/matrix-user-verification-service)).
+
+Additional details are available in the [Authenticate using Matrix OpenID (Auth-Type 'matrix')](docs/configuring-playbook-jitsi.md#authenticate-using-matrix-openid-auth-type-matrix).
+
+
+## Draupnir moderation tool (bot) support
+
+Thanks to [FSG-Cat](https://github.com/FSG-Cat), the playbook can now install and configure the [Draupnir](https://github.com/Gnuxie/Draupnir) moderation tool (bot). Draupnir is a fork of [Mjolnir](docs/configuring-playbook-bot-mjolnir.md) (which the playbook has supported for a long time) maintained by Mjolnir's former lead developer.
+
+Additional details are available in [Setting up Draupnir](docs/configuring-playbook-bot-draupnir.md).
+
+
+# 2023-02-05
+
+## The matrix-prometheus-postgres-exporter role lives independently now
+
+**TLDR**: the `matrix-prometheus-postgres-exporter` role is now included from another repository. Some variables have been renamed. All functionality remains intact.
+
+The `matrix-prometheus-postgres-exporter` role (which configures [Prometheus Postgres Exporter](https://github.com/prometheus-community/postgres_exporter)) has been extracted from the playbook and now lives in its own repository at https://gitlab.com/etke.cc/roles/prometheus_postgres_exporter
+
+It's still part of the playbook, but is now installed via `ansible-galaxy` (by running `just roles` / `make roles`). Some variables have been renamed (`matrix_prometheus_postgres_exporter_` -> `prometheus_postgres_exporter_`, etc.). The playbook will report all variables that you need to rename to get upgraded. All functionality remains intact.
+
+The `matrix-prometheus-services-proxy-connect` role has bee adjusted to help integrate the new `prometheus_postgres_exporter` role with our own services (`matrix-nginx-proxy`)
+
+Other roles which aren't strictly related to Matrix are likely to follow this fate of moving to their own repositories. Extracting them out allows other Ansible playbooks to make use of these roles easily.
+
+
+# 2023-01-26
+
+## Coturn can now use host-networking
+
+Large Coturn deployments (with a huge range of ports specified via `matrix_coturn_turn_udp_min_port` and `matrix_coturn_turn_udp_max_port`) experience a huge slowdown with how Docker publishes all these ports (setting up firewall forwarding rules), which leads to a very slow Coturn service startup and shutdown.
+
+Such deployments don't need to run Coturn within a private container network anymore. Coturn can now run with host-networking by using configuration like this:
+
+```yaml
+matrix_coturn_docker_network: host
+```
+
+With such a configuration, **Docker no longer needs to configure thousands of firewall forwarding rules** each time Coturn starts and stops.
+This, however, means that **you will need to ensure these ports are open** in your firewall yourself.
+
+Thanks to us [tightening Coturn security](#backward-compatibility-tightening-coturn-security-can-lead-to-connectivity-issues), running Coturn with host-networking should be safe and not expose neither other services running on the host, nor other services running on the local network.
+
+
+## (Backward Compatibility) Tightening Coturn security can lead to connectivity issues
+
+**TLDR**: users who run and access their Matrix server on a private network (likely a small minority of users) may experience connectivity issues with our new default Coturn blocklists. They may need to override `matrix_coturn_denied_peer_ips` and remove some IP ranges from it.
+
+Inspired by [this security article](https://www.rtcsec.com/article/cve-2020-26262-bypass-of-coturns-access-control-protection/), we've decided to make use of Coturn's `denied-peer-ip` functionality to prevent relaying network traffic to certain private IP subnets. This ensures that your Coturn server won't accidentally try to forward traffic to certain services running on your local networks. We run Coturn in a container and in a private container network by default, which should prevent such access anyway, but having additional block layers in place is better.
+
+If you access your Matrix server from a local network and need Coturn to relay to private IP addresses, you may observe that relaying is now blocked due to our new default `denied-peer-ip` lists (specified in `matrix_coturn_denied_peer_ips`). If you experience such connectivity problems, consider overriding this setting in your `vars.yml` file and removing certain networks from it.
+
+We've also added `no-multicast-peers` to the default Coturn configuration, but we don't expect this to cause trouble for most people.
+
+
+# 2023-01-21
+
+## The matrix-prometheus-node-exporter role lives independently now
+
+**TLDR**: the `matrix-prometheus-node-exporter` role is now included from another repository. Some variables have been renamed. All functionality remains intact.
+
+The `matrix-prometheus-node-exporter` role (which configures [Prometheus node exporter](https://github.com/prometheus/node_exporter)) has been extracted from the playbook and now lives in its own repository at https://gitlab.com/etke.cc/roles/prometheus_node_exporter
+
+It's still part of the playbook, but is now installed via `ansible-galaxy` (by running `just roles` / `make roles`). Some variables have been renamed (`matrix_prometheus_node_exporter_` -> `prometheus_node_exporter_`, etc.). The playbook will report all variables that you need to rename to get upgraded. All functionality remains intact.
+
+A new `matrix-prometheus-services-proxy-connect` role was added to the playbook to help integrate the new `prometheus_node_exporter` role with our own services (`matrix-nginx-proxy`)
+
+Other roles which aren't strictly related to Matrix are likely to follow this fate of moving to their own repositories. Extracting them out allows other Ansible playbooks to make use of these roles easily.
+
+
 # 2023-01-13
 
 ## Support for running commands via just
@@ -475,7 +710,7 @@ See our [Setting up the ntfy push notifications server](docs/configuring-playboo
 
 **If you're using node-exporter** (`matrix_prometheus_node_exporter_enabled: true`) and would like to collect its metrics from an external Prometheus server, see `matrix_prometheus_node_exporter_metrics_proxying_enabled` described in our [Collecting metrics to an external Prometheus server](docs/configuring-playbook-prometheus-grafana.md#collecting-metrics-to-an-external-prometheus-server) documentation. You will be able to collect its metrics from `https://matrix.DOMAIN/metrics/node-exporter`.
 
-**If you're using [postgres-exporter](docs/configuring-playbook-prometheus-postgres.md)** (`matrix_prometheus_postgres_exporter_enabled: true`) and would like to collect its metrics from an external Prometheus server, see `matrix_prometheus_postgres_exporter_metrics_proxying_enabled` described in our [Collecting metrics to an external Prometheus server](docs/configuring-playbook-prometheus-grafana.md#collecting-metrics-to-an-external-prometheus-server) documentation. You will be able to collect its metrics from `https://matrix.DOMAIN/metrics/postgres-exporter`.
+**If you're using [postgres-exporter](docs/configuring-playbook-prometheus-postgres.md)** (`prometheus_postgres_exporter_enabled: true`) and would like to collect its metrics from an external Prometheus server, see `matrix_prometheus_services_proxy_connect_prometheus_postgres_exporter_metrics_proxying_enabled` described in our [Collecting metrics to an external Prometheus server](docs/configuring-playbook-prometheus-grafana.md#collecting-metrics-to-an-external-prometheus-server) documentation. You will be able to collect its metrics from `https://matrix.DOMAIN/metrics/postgres-exporter`.
 
 **If you're using Synapse** and would like to collect its metrics from an external Prometheus server, you may find that:
 

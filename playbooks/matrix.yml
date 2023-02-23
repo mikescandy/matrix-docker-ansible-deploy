@@ -43,7 +43,7 @@
 
     - role: galaxy/com.devture.ansible.role.postgres
 
-    - custom/matrix-redis
+    - galaxy/redis
     - custom/matrix-corporal
     - custom/matrix-bridge-appservice-discord
     - custom/matrix-bridge-appservice-slack
@@ -79,6 +79,7 @@
     - custom/matrix-bot-postmoogle
     - custom/matrix-bot-go-neb
     - custom/matrix-bot-mjolnir
+    - custom/matrix-bot-draupnir
     - custom/matrix-bot-chatgpt
     - custom/matrix-cactus-comments
     - custom/matrix-synapse
@@ -86,33 +87,41 @@
     - custom/matrix-dendrite
     - custom/matrix-conduit
     - custom/matrix-synapse-admin
-    - custom/matrix-prometheus-node-exporter
-    - custom/matrix-prometheus-postgres-exporter
+    - galaxy/prometheus_node_exporter
+    - galaxy/prometheus_postgres_exporter
     - custom/matrix-prometheus-nginxlog-exporter
     - custom/matrix-prometheus
-    - custom/matrix-grafana
+    - galaxy/grafana
+    - custom/matrix-prometheus-services-proxy-connect
     - custom/matrix-registration
     - custom/matrix-client-element
     - custom/matrix-client-hydrogen
     - custom/matrix-client-cinny
     - custom/matrix-jitsi
+    - custom/matrix-user-verification-service
     - custom/matrix-ldap-registration-proxy
     - custom/matrix-ma1sd
     - custom/matrix-dimension
     - custom/matrix-etherpad
     - custom/matrix-email2matrix
     - custom/matrix-sygnal
-    - custom/matrix-ntfy
+    - galaxy/ntfy
     - custom/matrix-nginx-proxy
     - custom/matrix-coturn
     - custom/matrix-aux
 
     - role: galaxy/com.devture.ansible.role.postgres_backup
 
-    - custom/matrix-backup-borg
+    - role: galaxy/backup_borg
 
     - custom/matrix-user-creator
     - custom/matrix-common-after
+
+    - when: matrix_playbook_traefik_role_enabled | bool
+      role: galaxy/com.devture.ansible.role.traefik
+
+    - when: matrix_playbook_traefik_certs_dumper_role_enabled | bool
+      role: galaxy/com.devture.ansible.role.traefik_certs_dumper
 
     - when: devture_systemd_service_manager_enabled | bool
       role: galaxy/com.devture.ansible.role.systemd_service_manager

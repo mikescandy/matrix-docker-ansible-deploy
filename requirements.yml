@@ -1,10 +1,10 @@
 ---
 
 - src: geerlingguy.docker
-  version: 6.0.4
+  version: 6.1.0
 
 - src: git+https://github.com/devture/com.devture.ansible.role.docker_sdk_for_python.git
-  version: 6ba3be490b6f4c6f35ea109aeb8e533fa231b3a5
+  version: 54d6d1831f063e4a99b66c722f49053d59f8ee60
 
 - src: git+https://github.com/devture/com.devture.ansible.role.playbook_help.git
   version: c1f40e82b4d6b072b6f0e885239322bdaaaf554f
@@ -29,3 +29,27 @@
 
 - src: git+https://github.com/devture/com.devture.ansible.role.playbook_runtime_messages.git
   version: 9b4b088c62b528b73a9a7c93d3109b091dd42ec6
+
+- src: git+https://gitlab.com/etke.cc/roles/prometheus_node_exporter.git
+  version: v1.5.0-2
+
+- src: git+https://gitlab.com/etke.cc/roles/prometheus_postgres_exporter.git
+  version: v0.11.1-2
+
+- src: git+https://gitlab.com/etke.cc/roles/backup_borg.git
+  version: v1.2.3-1.7.7-0
+
+- src: git+https://gitlab.com/etke.cc/roles/grafana.git
+  version: v9.3.6-2
+
+- src: git+https://gitlab.com/etke.cc/roles/ntfy.git
+  version: v2.0.1-0
+
+- src: git+https://gitlab.com/etke.cc/roles/redis.git
+  version: v7.0.7-0
+
+- src: git+https://github.com/devture/com.devture.ansible.role.traefik.git
+  version: da90b6cdbbb9374ca72c1b530867add2fd8f024e
+
+- src: git+https://github.com/devture/com.devture.ansible.role.traefik_certs_dumper.git
+  version: e7563caa814e634d2f8deec4a41e970caa1c0ae4

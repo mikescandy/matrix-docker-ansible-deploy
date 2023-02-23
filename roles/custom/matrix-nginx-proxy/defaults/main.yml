@@ -21,6 +21,10 @@ matrix_nginx_proxy_systemd_required_services_list: ['docker.service']
 # List of systemd services that matrix-nginx-proxy.service wants
 matrix_nginx_proxy_systemd_wanted_services_list: []
 
+# The base container network.
+# Also see: matrix_nginx_proxy_container_additional_networks
+matrix_nginx_proxy_container_network: "{{ matrix_docker_network }}"
+
 # A list of additional container networks that matrix-nginx-proxy would be connected to.
 # The playbook does not create these networks, so make sure they already exist.
 #
@@ -35,6 +39,67 @@ matrix_nginx_proxy_container_additional_networks: []
 # if you wish to mount your own files into the container.
 # Contains definition objects like this: `{"src": "/outside", "dst": "/inside", "options": "rw|ro|slave|.."}
 matrix_nginx_proxy_container_additional_volumes: []
+
+# matrix_nginx_proxy_container_labels_traefik_enabled controls whether labels to assist a Traefik reverse-proxy will be attached to the container.
+# See `../templates/labels.j2` for details.
+#
+# To inject your own other container labels, see `matrix_nginx_proxy_container_labels_additional_labels`.
+matrix_nginx_proxy_container_labels_traefik_enabled: false
+matrix_nginx_proxy_container_labels_traefik_docker_network: "{{ matrix_nginx_proxy_container_network }}"
+matrix_nginx_proxy_container_labels_traefik_entrypoints: web-secure
+matrix_nginx_proxy_container_labels_traefik_tls_certResolver: default  # noqa var-naming
+
+matrix_nginx_proxy_container_labels_traefik_proxy_base_domain_enabled: "{{ matrix_nginx_proxy_base_domain_serving_enabled }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_base_domain_hostname: "{{ matrix_nginx_proxy_base_domain_hostname }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_base_domain_tls: "{{ matrix_nginx_proxy_container_labels_traefik_entrypoints != 'web' }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_base_domain_rule: "Host(`{{ matrix_nginx_proxy_container_labels_traefik_proxy_base_domain_hostname }}`)"
+
+matrix_nginx_proxy_container_labels_traefik_proxy_matrix_enabled: false
+matrix_nginx_proxy_container_labels_traefik_proxy_matrix_hostname: "{{ matrix_server_fqn_matrix }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_matrix_tls: "{{ matrix_nginx_proxy_container_labels_traefik_entrypoints != 'web' }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_matrix_rule: "Host(`{{ matrix_nginx_proxy_container_labels_traefik_proxy_matrix_hostname }}`)"
+matrix_nginx_proxy_container_labels_traefik_proxy_matrix_federation_entrypoint: "{{ matrix_federation_traefik_entrypoint }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_matrix_federation_entrypoints: "{{ matrix_nginx_proxy_container_labels_traefik_proxy_matrix_federation_entrypoint }}"
+
+matrix_nginx_proxy_container_labels_traefik_proxy_buscarron_enabled: false
+matrix_nginx_proxy_container_labels_traefik_proxy_buscarron_hostname: "{{ matrix_server_fqn_buscarron }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_buscarron_tls: "{{ matrix_nginx_proxy_container_labels_traefik_entrypoints != 'web' }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_buscarron_rule: "Host(`{{ matrix_nginx_proxy_container_labels_traefik_proxy_buscarron_hostname }}`)"
+
+matrix_nginx_proxy_container_labels_traefik_proxy_dimension_enabled: false
+matrix_nginx_proxy_container_labels_traefik_proxy_dimension_hostname: "{{ matrix_server_fqn_dimension }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_dimension_tls: "{{ matrix_nginx_proxy_container_labels_traefik_entrypoints != 'web' }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_dimension_rule: "Host(`{{ matrix_nginx_proxy_container_labels_traefik_proxy_dimension_hostname }}`)"
+
+matrix_nginx_proxy_container_labels_traefik_proxy_etherpad_enabled: false
+matrix_nginx_proxy_container_labels_traefik_proxy_etherpad_hostname: "{{ matrix_server_fqn_etherpad }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_etherpad_tls: "{{ matrix_nginx_proxy_container_labels_traefik_entrypoints != 'web' }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_etherpad_rule: "Host(`{{ matrix_nginx_proxy_container_labels_traefik_proxy_etherpad_hostname }}`)"
+
+matrix_nginx_proxy_container_labels_traefik_proxy_bot_go_neb_enabled: false
+matrix_nginx_proxy_container_labels_traefik_proxy_bot_go_neb_hostname: "{{ matrix_server_fqn_bot_go_neb }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_bot_go_neb_tls: "{{ matrix_nginx_proxy_container_labels_traefik_entrypoints != 'web' }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_bot_go_neb_rule: "Host(`{{ matrix_nginx_proxy_container_labels_traefik_proxy_bot_go_neb_hostname }}`)"
+
+matrix_nginx_proxy_container_labels_traefik_proxy_jitsi_enabled: false
+matrix_nginx_proxy_container_labels_traefik_proxy_jitsi_hostname: "{{ matrix_server_fqn_jitsi }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_jitsi_tls: "{{ matrix_nginx_proxy_container_labels_traefik_entrypoints != 'web' }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_jitsi_rule: "Host(`{{ matrix_nginx_proxy_container_labels_traefik_proxy_jitsi_hostname }}`)"
+
+matrix_nginx_proxy_container_labels_traefik_proxy_sygnal_enabled: false
+matrix_nginx_proxy_container_labels_traefik_proxy_sygnal_hostname: "{{ matrix_server_fqn_sygnal }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_sygnal_tls: "{{ matrix_nginx_proxy_container_labels_traefik_entrypoints != 'web' }}"
+matrix_nginx_proxy_container_labels_traefik_proxy_sygnal_rule: "Host(`{{ matrix_nginx_proxy_container_labels_traefik_proxy_sygnal_hostname }}`)"
+
+# matrix_nginx_proxy_container_labels_additional_labels contains a multiline string with additional labels to add to the container label file.
+# See `../templates/labels.j2` for details.
+#
+# Example:
+# matrix_nginx_proxy_container_labels_additional_labels: |
+#   my.label=1
+#   another.label="here"
+matrix_nginx_proxy_container_labels_additional_labels: ''
+
 
 # A list of extra arguments to pass to the container
 matrix_nginx_proxy_container_extra_arguments: []
@@ -203,6 +268,8 @@ matrix_nginx_proxy_proxy_bot_go_neb_hostname: "{{ matrix_server_fqn_bot_go_neb }
 # Controls whether proxying the jitsi domain should be done.
 matrix_nginx_proxy_proxy_jitsi_enabled: false
 matrix_nginx_proxy_proxy_jitsi_hostname: "{{ matrix_server_fqn_jitsi }}"
+matrix_nginx_proxy_proxy_jitsi_manage_wellknown: false
+matrix_nginx_proxy_proxy_jitsi_well_known_configuration_blocks: []
 
 # Controls whether proxying the grafana domain should be done.
 matrix_nginx_proxy_proxy_grafana_enabled: false
