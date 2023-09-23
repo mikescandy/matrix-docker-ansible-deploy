@@ -8,7 +8,7 @@ matrix_mautrix_whatsapp_container_image_self_build: false
 matrix_mautrix_whatsapp_container_image_self_build_repo: "https://mau.dev/mautrix/whatsapp.git"
 matrix_mautrix_whatsapp_container_image_self_build_branch: "{{ 'master' if matrix_mautrix_whatsapp_version == 'latest' else matrix_mautrix_whatsapp_version }}"
 
-matrix_mautrix_whatsapp_version: v0.8.2
+matrix_mautrix_whatsapp_version: v0.10.2
 # See: https://mau.dev/mautrix/whatsapp/container_registry
 matrix_mautrix_whatsapp_docker_image: "{{ matrix_mautrix_whatsapp_docker_image_name_prefix }}mautrix/whatsapp:{{ matrix_mautrix_whatsapp_version }}"
 matrix_mautrix_whatsapp_docker_image_name_prefix: "{{ 'localhost/' if matrix_mautrix_whatsapp_container_image_self_build else 'dock.mau.dev/' }}"
@@ -74,8 +74,9 @@ matrix_mautrix_whatsapp_database_password: 'some-password'
 matrix_mautrix_whatsapp_database_hostname: ''
 matrix_mautrix_whatsapp_database_port: 5432
 matrix_mautrix_whatsapp_database_name: 'matrix_mautrix_whatsapp'
+matrix_mautrix_whatsapp_database_sslmode: disable
 
-matrix_mautrix_whatsapp_database_connection_string: 'postgresql://{{ matrix_mautrix_whatsapp_database_username }}:{{ matrix_mautrix_whatsapp_database_password }}@{{ matrix_mautrix_whatsapp_database_hostname }}:{{ matrix_mautrix_whatsapp_database_port }}/{{ matrix_mautrix_whatsapp_database_name }}?sslmode=disable'
+matrix_mautrix_whatsapp_database_connection_string: 'postgresql://{{ matrix_mautrix_whatsapp_database_username }}:{{ matrix_mautrix_whatsapp_database_password }}@{{ matrix_mautrix_whatsapp_database_hostname }}:{{ matrix_mautrix_whatsapp_database_port }}/{{ matrix_mautrix_whatsapp_database_name }}?sslmode={{ matrix_mautrix_whatsapp_database_sslmode }}'
 
 matrix_mautrix_whatsapp_appservice_database_type: "{{
 	{
@@ -97,7 +98,7 @@ matrix_mautrix_whatsapp_bridge_login_shared_secret_map:
   "{{ {matrix_mautrix_whatsapp_homeserver_domain: matrix_mautrix_whatsapp_login_shared_secret} if matrix_mautrix_whatsapp_login_shared_secret else {} }}"
 
 # Enable End-to-bridge encryption
-matrix_mautrix_whatsapp_bridge_encryption_allow: false
+matrix_mautrix_whatsapp_bridge_encryption_allow: "{{ matrix_bridges_encryption_enabled }}"
 matrix_mautrix_whatsapp_bridge_encryption_default: "{{ matrix_mautrix_whatsapp_bridge_encryption_allow }}"
 matrix_mautrix_whatsapp_bridge_encryption_key_sharing_allow: "{{ matrix_mautrix_whatsapp_bridge_encryption_allow }}"
 
@@ -113,7 +114,7 @@ matrix_mautrix_whatsapp_bridge_permissions: |
   }}
 
 # Enable bridge relay functionality
-matrix_mautrix_whatsapp_bridge_relay_enabled: false
+matrix_mautrix_whatsapp_bridge_relay_enabled: "{{ matrix_bridges_relay_enabled }}"
 
 # Only allow admins on this home server to set themselves as a relay user
 matrix_mautrix_whatsapp_bridge_relay_admin_only: true

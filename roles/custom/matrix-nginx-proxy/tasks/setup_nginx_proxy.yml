@@ -115,6 +115,13 @@
     mode: 0644
   when: matrix_nginx_proxy_proxy_cinny_enabled | bool
 
+- name: Ensure Matrix nginx-proxy configuration for schildichat domain exists
+  ansible.builtin.template:
+    src: "{{ role_path }}/templates/nginx/conf.d/matrix-client-schildichat.conf.j2"
+    dest: "{{ matrix_nginx_proxy_confd_path }}/matrix-client-schildichat.conf"
+    mode: 0644
+  when: matrix_nginx_proxy_proxy_schildichat_enabled | bool
+
 - name: Ensure Matrix nginx-proxy configuration for buscarron domain exists
   ansible.builtin.template:
     src: "{{ role_path }}/templates/nginx/conf.d/matrix-bot-buscarron.conf.j2"
@@ -128,6 +135,13 @@
     dest: "{{ matrix_nginx_proxy_confd_path }}/matrix-dimension.conf"
     mode: 0644
   when: matrix_nginx_proxy_proxy_dimension_enabled | bool
+
+- name: Ensure Matrix nginx-proxy configuration for rageshake domain exists
+  ansible.builtin.template:
+    src: "{{ role_path }}/templates/nginx/conf.d/matrix-rageshake.conf.j2"
+    dest: "{{ matrix_nginx_proxy_confd_path }}/matrix-rageshake.conf"
+    mode: 0644
+  when: matrix_nginx_proxy_proxy_rageshake_enabled | bool
 
 - name: Ensure Matrix nginx-proxy configuration for etherpad domain exists
   ansible.builtin.template:
@@ -170,6 +184,13 @@
     dest: "{{ matrix_nginx_proxy_confd_path }}/matrix-ntfy.conf"
     mode: 0644
   when: matrix_nginx_proxy_proxy_ntfy_enabled | bool
+
+- name: Ensure Matrix nginx-proxy configuration for mautrix wsproxy exists
+  ansible.builtin.template:
+    src: "{{ role_path }}/templates/nginx/conf.d/matrix-mautrix-wsproxy.conf.j2"
+    dest: "{{ matrix_nginx_proxy_confd_path }}/matrix-mautrix-wsproxy.conf"
+    mode: 0644
+  when: matrix_nginx_proxy_proxy_mautrix_wsproxy_enabled|bool
 
 - name: Ensure Matrix nginx-proxy configuration for Matrix domain exists
   ansible.builtin.template:
@@ -267,6 +288,12 @@
     state: absent
   when: "not matrix_nginx_proxy_proxy_element_enabled | bool"
 
+- name: Ensure Matrix nginx-proxy configuration for Schildichat domain deleted
+  ansible.builtin.file:
+    path: "{{ matrix_nginx_proxy_confd_path }}/matrix-client-schildichat.conf"
+    state: absent
+  when: "not matrix_nginx_proxy_proxy_schildichat_enabled | bool"
+
 - name: Ensure Matrix nginx-proxy configuration for Hydrogen domain deleted
   ansible.builtin.file:
     path: "{{ matrix_nginx_proxy_confd_path }}/matrix-client-hydrogen.conf"
@@ -290,6 +317,12 @@
     path: "{{ matrix_nginx_proxy_confd_path }}/matrix-dimension.conf"
     state: absent
   when: "not matrix_nginx_proxy_proxy_dimension_enabled | bool"
+
+- name: Ensure Matrix nginx-proxy configuration for rageshake domain deleted
+  ansible.builtin.file:
+    path: "{{ matrix_nginx_proxy_confd_path }}/matrix-rageshake.conf"
+    state: absent
+  when: "not matrix_nginx_proxy_proxy_rageshake_enabled | bool"
 
 - name: Ensure Matrix nginx-proxy configuration for goneb domain deleted
   ansible.builtin.file:
@@ -320,6 +353,12 @@
     path: "{{ matrix_nginx_proxy_confd_path }}/matrix-ntfy.conf"
     state: absent
   when: "not matrix_nginx_proxy_proxy_ntfy_enabled | bool"
+
+- name: Ensure Matrix nginx-proxy configuration for mautrix wsproxy deleted
+  ansible.builtin.file:
+    path: "{{ matrix_nginx_proxy_confd_path }}/matrix-mautrix-wsproxy.conf"
+    state: absent
+  when: "not matrix_nginx_proxy_proxy_mautrix_wsproxy_enabled|bool"
 
 - name: Ensure Matrix nginx-proxy configuration for etherpad domain deleted
   ansible.builtin.file:
